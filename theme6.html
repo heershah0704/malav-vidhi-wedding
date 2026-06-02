@@ -972,6 +972,24 @@ footer strong{color:var(--accent); font-weight:700;}
 /* ══════════════════════════════════════════════════════
    DATA LAYER
 ══════════════════════════════════════════════════════ */
+async function loadCloudData() {
+  const sb = getSB();
+  if (sb) {
+    try {
+      const { data, error } = await sb.from('site_config').select('data').eq('id', 1).single();
+      if (data && data.data) {
+        D = data.data;
+        localStorage.setItem('mv_wedding', JSON.stringify(D));
+      } else if (!data) {
+        // Seed cloud if empty
+        await sb.from('site_config').upsert({ id: 1, data: D });
+      }
+    } catch (e) {
+      console.warn("Cloud config load failed", e);
+    }
+  }
+}
+
 function loadData() {
   const saved = localStorage.getItem('mv_wedding');
   let data = saved ? JSON.parse(saved) : JSON.parse(JSON.stringify(DEFAULTS));
@@ -979,17 +997,26 @@ function loadData() {
   data.weddingDateDisplay = '28 Jan 2027';
   return data;
 }
-function saveData(d) { localStorage.setItem('mv_wedding', JSON.stringify(d)); }
+
+function saveData(d) { 
+  localStorage.setItem('mv_wedding', JSON.stringify(d)); 
+  const sb = getSB();
+  if (sb && isAdmin()) {
+    sb.from('site_config').upsert({ id: 1, data: d }).catch(e=>console.warn(e));
+  }
+}
 let D = loadData();
 
 /* ══════════════════════════════════════════════════════
    INIT
 ══════════════════════════════════════════════════════ */
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
+  await loadCloudData();
   renderHero();
   startCountdown();
   renderStory();
   renderEvents();
+  await loadGalleryFromSupabase();
   renderGallery();
   renderTravel();
   renderFAQ();
@@ -1381,29 +1408,65 @@ function enableGalleryEditing() {
   grid.innerHTML = h;
 }
 
-function loadGalPhoto(input, i) {
+async function loadGalPhoto(input, i) {
   const file = input.files[0]; if (!file) return;
-  const r = new FileReader();
-  r.onload = e => {
-    try {
+  showToast('Uploading photo…');
+  const sb = getSB();
+  if (sb) {
+    const ext = file.name.split('.').pop();
+    const filename = 'gallery_' + Date.now() + '_' + i + '.' + ext;
+    const { data, error } = await sb.storage.from('gallery').upload(filename, file, { upsert: true });
+    if (error) { showToast('Upload failed: ' + error.message); return; }
+    const { data: urlData } = sb.storage.from('gallery').getPublicUrl(filename);
+    const url = urlData.publicUrl;
+    D.gallery = D.gallery || [];
+    D.gallery[i] = url;
+    saveData(D);
+    /* Also persist URL list to Supabase so all devices load the same gallery */
+    await syncGalleryToSupabase();
+    enableGalleryEditing();
+    enableStoryEditing();
+    showToast('Photo uploaded!');
+  } else {
+    /* Fallback: store as base64 locally */
+    const r = new FileReader();
+    r.onload = e => {
       D.gallery = D.gallery || [];
       D.gallery[i] = e.target.result;
       saveData(D);
       enableGalleryEditing();
-  enableStoryEditing();
-    } catch(err) {
-      showToast('Error: Image too large. Please use a smaller image.');
-    }
-  };
-  r.readAsDataURL(file);
+      enableStoryEditing();
+    };
+    r.readAsDataURL(file);
+  }
 }
 
-function removeGalPhoto(i) {
+async function removeGalPhoto(i) {
   if(!confirm('Remove this photo?')) return;
   D.gallery.splice(i, 1);
   saveData(D);
+  const sb = getSB();
+  if (sb) await syncGalleryToSupabase();
   enableGalleryEditing();
   enableStoryEditing();
+}
+
+async function syncGalleryToSupabase() {
+  const sb = getSB(); if (!sb) return;
+  const urls = (D.gallery || []).filter(Boolean);
+  await sb.from('gallery_photos').delete().neq('id', 0);
+  if (urls.length > 0) {
+    await sb.from('gallery_photos').insert(urls.map((url, pos) => ({ url, position: pos })));
+  }
+}
+
+async function loadGalleryFromSupabase() {
+  const sb = getSB(); if (!sb) return;
+  const { data, error } = await sb.from('gallery_photos').select('*').order('position', { ascending: true });
+  if (!error && data && data.length > 0) {
+    D.gallery = data.map(r => r.url);
+    saveData(D);
+  }
 }
 
 function addGalSlot() {
