@@ -1,0 +1,17 @@
+*.py
+index_backup.html
+theme1.html
+theme2.html
+theme3.html
+theme4.html
+theme5.html
+theme-lotus-sage.html
+theme-royal-peacock.html
+theme-watercolor-vivaah.html
+tunnel.txt
+tunnel_url.txt
+tunnel_url2.txt
+host_temp.py
+registry_section.html
+DEPLOY_STEPS.md
+supabase_schema.sql
