@@ -1005,6 +1005,19 @@ async function loadCloudData() {
         // Seed cloud if empty
         await sb.from('site_config').upsert({ id: 1, data: D });
       }
+
+      // Pre-fetch guest list so RSVP unlock is instantaneous
+      const { data: gData, error: gError } = await sb.from('guests').select('*');
+      if (!gError && gData) {
+        D.guestList = gData.map(r => ({
+          _id: r.id,
+          fname: r.fname,
+          lname: r.lname,
+          partySize: r.party_size,
+          allowedEvents: (() => { try { return JSON.parse(r.allowed_events || '[]'); } catch(e) { return []; } })()
+        }));
+        localStorage.setItem('mv_wedding', JSON.stringify(D));
+      }
     } catch (e) {
       console.warn("Cloud config load failed", e);
     }
@@ -1136,6 +1149,9 @@ function restorePhotoSlot(id, src) {
   const ic = slot.querySelector('.ph-icon'); if (ic) ic.style.display='none';
   let img = slot.querySelector('img');
   if (!img) { img = document.createElement('img'); slot.appendChild(img); }
+  img.src = src; img.alt = 'Photo';
+  img.onclick = ev => { ev.stopPropagation(); openLB(src); };
+}
 
 function enableStoryEditing() {
   ['sp-1','sp-2','sp-3'].forEach(id => {
@@ -1155,10 +1171,6 @@ function enableStoryEditing() {
        slot.appendChild(inp);
     }
   });
-}
-
-  img.src = src; img.alt = 'Photo';
-  img.onclick = ev => { ev.stopPropagation(); openLB(src); };
 }
 
 /* ══════════════════════════════════════════════════════
@@ -1957,25 +1969,10 @@ async function unlockSchedule() {
 
   if(!fname || !lname) { err.textContent = "Please enter both first and last names."; err.style.display = 'block'; return; }
 
-  /* Always fetch fresh guest list from Supabase so changes take effect immediately */
-  const sb = getSB();
-  if (sb) {
-    const { data, error } = await sb.from('guests').select('*');
-    if (!error && data) {
-      D.guestList = data.map(r => ({
-        _id: r.id,
-        fname: r.fname,
-        lname: r.lname,
-        partySize: r.party_size,
-        allowedEvents: (() => { try { return JSON.parse(r.allowed_events || '[]'); } catch(e) { return []; } })()
-      }));
-      saveData(D);
-    }
-  }
-
   const guests = D.guestList || [];
   if(guests.length === 0) {
-    const g = { fname: fnameRaw, lname: lnameRaw, partySize: 5 };
+    // Provide a fallback that grants access to all events if the guest list is empty
+    const g = { fname: fnameRaw, lname: lnameRaw, partySize: 5, allowedEvents: D.events };
     sessionStorage.setItem('current_guest', JSON.stringify(g));
     closeModal('unlock-modal');
     applyUnlockedGuest(g);
