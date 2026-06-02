@@ -766,6 +766,26 @@ footer strong{color:var(--accent); font-weight:700;}
 <!-- ════════════════ ADMIN BAR ════════════════ -->
 
 
+
+<!-- ════════════════ ADMIN: HERO EDITOR ════════════════ -->
+<div class="modal-bg" id="modal-hero-editor">
+  <div class="modal">
+    <div class="modal-head">
+      <h2>Edit Hero Location</h2>
+      <button class="modal-close" onclick="closeModal('modal-hero-editor')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label>Hero Location (Front Page)</label>
+        <input type="text" id="hero-loc-input" placeholder="e.g. Ahmedabad, Gujarat">
+      </div>
+      <button class="btn" style="width:100%; margin-top:10px;" onclick="saveHero()">Save Hero</button>
+    </div>
+  </div>
+</div>
+
 <!-- ════════════════ ADMIN LOGIN MODAL ════════════════ -->
 <div class="modal-bg" id="admin-login-modal">
   <div class="modal" style="max-width:400px">
@@ -1041,7 +1061,7 @@ function renderHero() {
   
   // Hardcoded as requested
   document.getElementById('h-date').textContent = '28 Jan 2027';
-  document.getElementById('h-loc').textContent = (D.events && D.events.length && D.events[0].venue && D.events[0].venue !== 'Venue TBD') ? D.events[0].venue : 'Ahmedabad, Gujarat';
+  document.getElementById('h-loc').textContent = D.heroLoc || ((D.events && D.events.length && D.events[0].venue && D.events[0].venue !== 'Venue TBD') ? D.events[0].venue : 'Ahmedabad, Gujarat');
 }
 
 /* ══════════════════════════════════════════════════════
