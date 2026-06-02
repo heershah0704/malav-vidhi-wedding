@@ -1770,9 +1770,14 @@ async function openAdmRSVPs() {
   let rsvps = [];
   const sb = getSB();
   if (sb) {
-    const { data, error } = await sb.from('rsvps').select('*').order('id', { ascending: false });
-    if (!error && data) rsvps = data;
-    else rsvps = D.rsvps || [];
+    try {
+      const { data, error } = await sb.from('rsvps').select('*').order('id', { ascending: false });
+      if (!error && data) rsvps = data;
+      else rsvps = D.rsvps || [];
+    } catch(err) {
+      console.warn("RSVPs fetch failed", err);
+      rsvps = D.rsvps || [];
+    }
   } else {
     rsvps = D.rsvps || [];
   }
@@ -2004,16 +2009,20 @@ async function openAdmGuests() {
   /* Refresh guest list from Supabase */
   const sb = getSB();
   if (sb) {
-    const { data, error } = await sb.from('guests').select('*').order('id', { ascending: true });
-    if (!error && data) {
-      D.guestList = data.map(r => ({
-        _id: r.id,
-        fname: r.fname,
-        lname: r.lname,
-        partySize: r.party_size,
-        allowedEvents: (() => { try { return JSON.parse(r.allowed_events || '[]'); } catch(e) { return []; } })()
-      }));
-      saveData(D);
+    try {
+      const { data, error } = await sb.from('guests').select('*').order('id', { ascending: true });
+      if (!error && data) {
+        D.guestList = data.map(r => ({
+          _id: r.id,
+          fname: r.fname,
+          lname: r.lname,
+          partySize: r.party_size,
+          allowedEvents: (() => { try { return JSON.parse(r.allowed_events || '[]'); } catch(e) { return []; } })()
+        }));
+        saveData(D);
+      }
+    } catch(err) {
+      console.warn("Guests fetch failed, using local backup", err);
     }
   }
 
