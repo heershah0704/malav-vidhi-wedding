@@ -147,6 +147,12 @@ section{padding:120px 20px; position:relative;}
   overflow: hidden;
   padding-top: 80px;
 }
+/* Fix for iOS Safari background-attachment: fixed bug */
+@supports (-webkit-touch-callout: none) {
+  #hero {
+    background-attachment: scroll;
+  }
+}
 .hero-tag { font-family: var(--ff-head); font-size: 1.1rem; letter-spacing: .5em; color: var(--accent); margin-bottom: 25px; text-transform: uppercase; font-weight: 700; text-shadow: 1px 1px 5px rgba(0,0,0,0.3); z-index: 5;}
 .hero-names { font-family: var(--ff-accent); font-size: clamp(4rem, 10vw, 8rem); color: var(--primary); line-height: 1.1; letter-spacing: 0.05em; z-index: 15; position: relative; text-shadow: 2px 2px 8px rgba(212,175,55,0.4); opacity: 1; }
 .hero-amp { font-family: var(--ff-head); font-size: clamp(2rem, 5vw, 3.5rem); color: var(--accent); margin: 10px 0; z-index: 15; position:relative; }
