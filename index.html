@@ -984,6 +984,7 @@ footer strong{color:var(--accent); font-weight:700;}
       </div>
       <div class="m-btns">
         <button class="m-btn primary" onclick="saveGuest()">Save Guest</button>
+        <button class="m-btn outline" onclick="closeModal('adm-guest-form-modal')">Cancel</button>
       </div>
     </div>
   </div>
@@ -1043,7 +1044,15 @@ function saveData(d) {
   }
   const sb = getSB();
   if (sb && isAdmin()) {
-    sb.from('site_config').upsert({ id: 1, data: d }, { onConflict: 'id' }).catch(e=>console.warn(e));
+    try {
+      sb.from('site_config').upsert({ id: 1, data: d }, { onConflict: 'id' }).then(res => {
+        if (res && res.error) console.warn(res.error);
+      }, err => {
+        console.warn(err);
+      });
+    } catch(e) {
+      console.warn("Supabase upsert sync error:", e);
+    }
   }
 }
 let D = loadData();
