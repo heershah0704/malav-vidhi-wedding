@@ -1006,7 +1006,7 @@ async function loadCloudData() {
         localStorage.setItem('mv_wedding', JSON.stringify(D));
       } else if (!data) {
         // Seed cloud if empty
-        await sb.from('site_config').upsert({ id: 1, data: D });
+        await sb.from('site_config').upsert({ id: 1, data: D }, { onConflict: 'id' });
       }
 
       // Pre-fetch guest list so RSVP unlock is instantaneous
@@ -1039,7 +1039,7 @@ function saveData(d) {
   localStorage.setItem('mv_wedding', JSON.stringify(d)); 
   const sb = getSB();
   if (sb && isAdmin()) {
-    sb.from('site_config').upsert({ id: 1, data: d }).catch(e=>console.warn(e));
+    sb.from('site_config').upsert({ id: 1, data: d }, { onConflict: 'id' }).catch(e=>console.warn(e));
   }
 }
 let D = loadData();
