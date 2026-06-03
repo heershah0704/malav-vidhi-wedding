@@ -557,7 +557,6 @@ footer strong{color:var(--accent); font-weight:700;}
     <li><a href="#story">Our Story</a></li>
     <li><a href="#events">Events</a></li>
     <li><a href="#travel">Stay</a></li>
-    <li><a href="#gallery">Gallery</a></li>
     <li><a href="#rsvp">RSVP</a></li>
     <li><a href="#faq">FAQ</a></li>
   </ul>
@@ -663,16 +662,6 @@ footer strong{color:var(--accent); font-weight:700;}
   <div id="travel-wrap" class="fi"></div>
 </section>
 
-<!-- ════════════════ GALLERY ════════════════ -->
-<section id="gallery">
-  <div class="sec-hdr fi">
-    <p class="sec-tag">Moments Together</p>
-    <h2 class="sec-title">Photo <em>Gallery</em></h2>
-    <div class="orn"><div class="orn-diamond"></div></div>
-  </div>
-  <div class="gal-grid fi" id="gal-grid">
-  </div>
-</section>
 
 <!-- ════════════════ RSVP ════════════════ -->
 <section id="rsvp" style="display: none;">
@@ -1614,6 +1603,21 @@ function showAdminBar() {
 }
 function isAdmin() { return sessionStorage.getItem('mv_admin') === '1'; }
 function requireAdmin() { if (!isAdmin()) { showToast('Please log in as admin first.'); return false; } return true; }
+
+/* ══════════════════════════════════════════════════════
+   ADMIN: HERO EDITOR
+══════════════════════════════════════════════════════ */
+function openHeroEditor() {
+  document.getElementById('hero-loc-input').value = D.heroLoc || '';
+  openModal('modal-hero-editor');
+}
+function saveHero() {
+  D.heroLoc = document.getElementById('hero-loc-input').value.trim();
+  saveData(D);
+  document.getElementById('h-loc').textContent = D.heroLoc || 'Ahmedabad, Gujarat';
+  closeModal('modal-hero-editor');
+  showToast('Hero location saved!');
+}
 
 /* ══════════════════════════════════════════════════════
    ADMIN: STORY EDITOR
