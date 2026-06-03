@@ -56,10 +56,7 @@ const DEFAULTS = {
   guestList: [
     { fname: 'guest', lname: 'guest', partySize: 2, allowedEvents: ['Sangeet & Mehendi', 'Wedding Ceremony', 'Reception'] }
   ],
-  rsvps: [],
-  stays: [
-    { name: 'Taj Skyline', distance: '5 mins away', price: '$$$', link: '#' }
-  ]
+  rsvps: []
 };
 </script>
 
@@ -749,7 +746,6 @@ footer strong{color:var(--accent); font-weight:700;}
   <button class="ab-btn" onclick="openHeroEditor()">Edit Hero Location</button>
   <button class="ab-btn" onclick="openAdmStory()">Edit Story</button>
   <button class="ab-btn" onclick="openAdmEvents()">Manage Events</button>
-  <button class="ab-btn" onclick="openAdmTravel()">Manage Stays</button>
   <button class="ab-btn" onclick="openAdmGuests()">Manage Guests</button><button class="ab-btn" onclick="openAdmRSVPs()">View RSVPs</button>
   <button class="ab-btn" onclick="downloadCSV()">Download Guest List</button>
   <button class="ab-btn logout" onclick="adminLogout()">Logout</button>
@@ -856,47 +852,6 @@ footer strong{color:var(--accent); font-weight:700;}
       <div class="m-btns">
         <button class="m-btn primary" onclick="saveEvent()">Save Event</button>
         <button class="m-btn outline" onclick="closeModal('adm-event-form-modal')">Cancel</button>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- ════════════════ ADMIN: TRAVEL ════════════════ -->
-<div class="modal-bg" id="adm-travel-modal">
-  <div class="modal">
-    <div class="modal-head">
-      <h2>Manage Stays</h2>
-      <button class="modal-close" onclick="closeModal('adm-travel-modal')">
-        <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
-      </button>
-    </div>
-    <div class="modal-body" id="adm-travel-body"></div>
-  </div>
-</div>
-
-<!-- ════════════════ ADMIN: ADD/EDIT STAY ════════════════ -->
-<div class="modal-bg" id="adm-stay-form-modal">
-  <div class="modal">
-    <div class="modal-head">
-      <h2 id="stf-title">Add Stay</h2>
-      <button class="modal-close" onclick="closeModal('adm-stay-form-modal')">
-        <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
-      </button>
-    </div>
-    <div class="modal-body">
-      <input type="hidden" id="stf-idx" value="-1"/>
-      <div class="mf-group"><label>Hotel / Resort Name *</label><input type="text" id="stf-name" placeholder="Hotel name"/></div>
-      <div class="mf-row">
-        <div class="mf-group"><label>Distance from Venue</label><input type="text" id="stf-dist" placeholder="e.g. 5 min away"/></div>
-        <div class="mf-group"><label>Price Range</label><input type="text" id="stf-price" placeholder="e.g. Rs. 4,000/night"/></div>
-      </div>
-      <div class="mf-group"><label>Booking Link</label><input type="url" id="stf-link" placeholder="https://..."/></div>
-      
-
-
-      <div class="m-btns">
-        <button class="m-btn primary" onclick="saveStay()">Save Stay</button>
-        <button class="m-btn outline" onclick="closeModal('adm-stay-form-modal')">Cancel</button>
       </div>
     </div>
   </div>
@@ -1191,12 +1146,6 @@ function renderEvents() {
     return;
   }
   
-  // Only render the events that this specific user is allowed to see if the schedule is unlocked.
-  // The global 'renderEvents' is for public view if the lock feature wasn't strict, 
-  // but we should just render whatever is in D.events if we reach here (assuming public view).
-  // Wait, applyUnlockedGuest overwrites the innerHTML of .events-grid directly.
-  // We will change the default render to include the Maps and Calendar links.
-  
   w.innerHTML = `<div class="events-grid">${D.events.map((ev, i) => {
     const loc = encodeURIComponent(ev.address || ev.venue || 'Wedding Venue');
     const name = encodeURIComponent(ev.name);
@@ -1217,7 +1166,6 @@ function renderEvents() {
       <div style="display:flex; flex-wrap:wrap; gap:15px; font-size:0.75rem; font-family:var(--ff-head); font-weight:700; letter-spacing:0.1em; margin-bottom:20px; border-top:1px solid var(--border); padding-top:15px;">
         <a href="https://calendar.google.com/calendar/render?action=TEMPLATE&text=${name}&location=${loc}&details=Wedding%20Event" target="_blank" style="color:var(--primary); text-decoration:none; border-bottom:1px solid var(--accent); padding-bottom:2px; transition:all 0.3s;">ADD TO CALENDAR &rarr;</a>
         <a href="https://www.google.com/maps/dir/?api=1&destination=${loc}" target="_blank" style="color:var(--primary); text-decoration:none; border-bottom:1px solid var(--accent); padding-bottom:2px; transition:all 0.3s;">DIRECTIONS &rarr;</a>
-        <a href="#travel" style="color:var(--primary); text-decoration:none; border-bottom:1px solid var(--accent); padding-bottom:2px; transition:all 0.3s;">WHERE TO STAY &rarr;</a>
       </div>
       
       <div style="border-radius:10px; overflow:hidden; border:1px solid var(--border); box-shadow:0 4px 15px rgba(0,0,0,0.05); height:200px; background:var(--bg2);">
@@ -1240,7 +1188,6 @@ function toRoman(n) {
 function renderTravel() {
   const w = document.getElementById('travel-wrap');
   
-  // Find primary venue for auto-generated map
   let primaryVenue = '';
   if(D.events && D.events.length > 0 && D.events[0].venue && D.events[0].venue !== 'Venue TBD') {
     primaryVenue = D.events[0].address || D.events[0].venue;
@@ -1248,7 +1195,6 @@ function renderTravel() {
   
   let html = '';
   
-  // Auto-generate Nearby Stays using Google Maps if venue exists
   if(primaryVenue) {
     const mapQuery = encodeURIComponent(`hotels near ${primaryVenue}`);
     const bookingQuery = encodeURIComponent(primaryVenue);
@@ -1273,33 +1219,13 @@ function renderTravel() {
         </div>
       </div>
     `;
+  } else {
+    html += `<div class="travel-empty">
+      <h3>Accommodation Recommendations</h3>
+      <p>Hotel and stay suggestions near the venue will be listed here once the destination is confirmed.</p>
+    </div>`;
   }
   
-  if (!D.stays || D.stays.length === 0) {
-    if(!primaryVenue) {
-        html += `<div class="travel-empty">
-          <h3>Accommodation Recommendations</h3>
-          <p>Hotel and stay suggestions near the venue will be listed here once the destination is confirmed.</p>
-        </div>`;
-    }
-  } else {
-    html += `<h3 class="fi" style="font-family:var(--ff-head); color:var(--primary); font-size:1.3rem; margin-bottom:20px; text-align:center;">Our Handpicked Recommendations</h3>`;
-    html += `<div class="travel-grid">${D.stays.map(s => `
-      <div class="travel-card fi">
-        <div class="travel-card-top">
-          <svg viewBox="0 0 24 24" fill="none" stroke-width="1.2">
-            <path d="M3 22V8M21 22V8M1 22h22M12 2l9 6H3l9-6z"/>
-            <rect x="9" y="14" width="6" height="8" rx="1"/>
-          </svg>
-        </div>
-        <div class="travel-body">
-          <h3 class="travel-name">${s.name}</h3>
-          <p class="travel-dist">${s.distance || ''}</p>
-          <p class="travel-price">${s.price || ''}</p>
-          ${s.link ? `<a href="${s.link}" target="_blank" class="travel-btn">Book Now</a>` : ''}
-        </div>
-      </div>`).join('')}</div>`;
-  }
   w.innerHTML = html;
   initScrollFade();
 }
@@ -1718,65 +1644,7 @@ function deleteEvent(i) {
   showToast('Event deleted.');
 }
 
-/* ══════════════════════════════════════════════════════
-   ADMIN: TRAVEL
-══════════════════════════════════════════════════════ */
-function openAdmTravel() {
-  if (!requireAdmin()) return;
-  const body = document.getElementById('adm-travel-body');
-  body.innerHTML = `
-    <div class="m-btns" style="margin-top:0;margin-bottom:18px">
-      <button class="m-btn gold" onclick="openStayForm(-1)">+ Add Stay Recommendation</button>
-    </div>
-    <ul class="adm-list">
-      ${D.stays.length === 0 ? '<li style="color:var(--muted);font-size:.85rem;padding:12px 0">No stays added yet.</li>' :
-        D.stays.map((s, i) => `
-          <li class="adm-li">
-            <div>
-              <div class="adm-li-name">${s.name}</div>
-              <div class="adm-li-sub">${s.distance || ''} &middot; ${s.price || ''}</div>
-            </div>
-            <div class="adm-li-actions">
-              <button class="adm-li-btn edit" onclick="openStayForm(${i})">Edit</button>
-              <button class="adm-li-btn del"  onclick="deleteStay(${i})">Delete</button>
-            </div>
-          </li>`).join('')}
-    </ul>`;
-  openModal('adm-travel-modal');
-}
-function openStayForm(idx) {
-  document.getElementById('stf-title').textContent = idx === -1 ? 'Add Stay' : 'Edit Stay';
-  document.getElementById('stf-idx').value = idx;
-  const s = idx === -1 ? {} : D.stays[idx];
-  document.getElementById('stf-name').value  = s.name     || '';
-  document.getElementById('stf-dist').value  = s.distance || '';
-  document.getElementById('stf-price').value = s.price    || '';
-  document.getElementById('stf-link').value  = s.link     || '';
-  openModal('adm-stay-form-modal');
-}
-function saveStay() {
-  const name = document.getElementById('stf-name').value.trim();
-  if (!name) { showToast('Hotel name is required.'); return; }
-  const s = {
-    name,
-    distance: document.getElementById('stf-dist').value.trim(),
-    price:    document.getElementById('stf-price').value.trim(),
-    link:     document.getElementById('stf-link').value.trim(),
-  };
-  const idx = parseInt(document.getElementById('stf-idx').value);
-  if (idx === -1) D.stays.push(s); else D.stays[idx] = s;
-  saveData(D); renderTravel();
-  closeModal('adm-stay-form-modal');
-  openAdmTravel();
-  showToast('Stay saved!');
-}
-function deleteStay(i) {
-  if (!confirm(`Delete "${D.stays[i].name}"?`)) return;
-  D.stays.splice(i, 1);
-  saveData(D); renderTravel();
-  openAdmTravel();
-  showToast('Stay deleted.');
-}
+
 
 /* ══════════════════════════════════════════════════════
    ADMIN: RSVPs + CSV
