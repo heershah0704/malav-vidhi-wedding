@@ -1036,7 +1036,11 @@ function loadData() {
 }
 
 function saveData(d) { 
-  localStorage.setItem('mv_wedding', JSON.stringify(d)); 
+  try {
+    localStorage.setItem('mv_wedding', JSON.stringify(d)); 
+  } catch(e) {
+    console.warn("localStorage quota exceeded, skipping local cache update", e);
+  }
   const sb = getSB();
   if (sb && isAdmin()) {
     sb.from('site_config').upsert({ id: 1, data: d }, { onConflict: 'id' }).catch(e=>console.warn(e));
