@@ -12,11 +12,8 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <!-- ═══════════════════════════════════════════════════════════
-     ADMIN CONFIG — change password here
-     ═══════════════════════════════════════════════════════════ -->
+<!-- ADMIN CONFIG REMOVED (Now using Secure Supabase Auth) -->
 <script>
-const ADMIN_EMAIL    = "hiyashah2468@gmail.com";
-const ADMIN_PASSWORD = "MalavVidhi@2025"; // change this
 
 /* ── SUPABASE CONFIG ── */
 const SUPABASE_URL  = "https://ckfkddrpfvukghjjuczq.supabase.co";
@@ -1025,7 +1022,16 @@ document.addEventListener('DOMContentLoaded', async () => {
   initNav();
   initFAQ();
   initScrollFade();
-  if (sessionStorage.getItem('mv_admin') === '1') showAdminBar();
+  if (sb) {
+    sb.auth.getSession().then(({ data: { session } }) => {
+      if (session) {
+        sessionStorage.setItem('mv_admin', '1');
+        showAdminBar();
+      } else {
+        sessionStorage.removeItem('mv_admin');
+      }
+    });
+  }
   if (EMAILJS.enabled) emailjs.init(EMAILJS.publicKey);
 });
 
@@ -1506,20 +1512,28 @@ document.querySelectorAll('.modal-bg').forEach(bg => {
    ADMIN AUTH
 ══════════════════════════════════════════════════════ */
 function openAdminLogin() { openModal('admin-login-modal'); }
-function doLogin() {
+async function doLogin() {
   const email = document.getElementById('login-email').value.trim().toLowerCase();
   const pass  = document.getElementById('login-pass').value;
   const err   = document.getElementById('login-err');
-  if (email === ADMIN_EMAIL.toLowerCase() && pass === ADMIN_PASSWORD) {
+  
+  err.style.display = 'none';
+  if (!sb) { showToast('Database connection error'); return; }
+  
+  const { data, error } = await sb.auth.signInWithPassword({ email, password: pass });
+  
+  if (error) {
+    err.textContent = error.message;
+    err.style.display = 'block';
+  } else {
     sessionStorage.setItem('mv_admin', '1');
     closeModal('admin-login-modal');
     showAdminBar();
     showToast('Welcome! Admin mode active.');
-  } else {
-    err.style.display = 'block';
   }
 }
-function adminLogout() {
+async function adminLogout() {
+  if (sb) await sb.auth.signOut();
   sessionStorage.removeItem('mv_admin');
   const ab = document.getElementById('admin-bar');
   if(ab) ab.style.display = 'none';
